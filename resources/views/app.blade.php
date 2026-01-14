@@ -59,15 +59,14 @@
                             </div>
                             <div>
                                 <label for="exportTag">Tag (optional)</label>
-                                <input id="exportTag" type="text" placeholder="web">
+                                <input id="exportTag" type="text" placeholder="web, mobile, desktop">
                             </div>
                         </div>
-                        <div class="actions">
+                        <div class="actions vertical">
                             <button type="submit">Fetch Export</button>
-                            <button type="button" id="downloadExport" class="secondary">Download JSON</button>
+                            <button type="button" id="resetExport" class="secondary">Reset</button>
                         </div>
                     </form>
-                    <pre id="exportOutput">{}</pre>
                 </div>
             </section>
 
@@ -91,7 +90,7 @@
                         </div>
                         <div style="margin-top: 12px;">
                             <label for="createTags">Tags (comma separated)</label>
-                            <input id="createTags" type="text" placeholder="web, mobile">
+                            <input id="createTags" type="text" placeholder="web, mobile, desktop">
                         </div>
                         <div class="actions">
                             <button type="submit">Create</button>
@@ -111,7 +110,7 @@
                             </div>
                             <div>
                                 <label for="updateTags">Tags (comma separated)</label>
-                                <input id="updateTags" type="text" placeholder="web, mobile">
+                                <input id="updateTags" type="text" placeholder="web, mobile, desktop">
                             </div>
                         </div>
                         <div style="margin-top: 12px;">
@@ -144,7 +143,7 @@
                             </div>
                             <div>
                                 <label for="searchTag">Tag</label>
-                                <input id="searchTag" type="text" placeholder="web">
+                                <input id="searchTag" type="text" placeholder="web, mobile, desktop">
                             </div>
                         </div>
                         <div class="actions">
@@ -167,13 +166,34 @@
                             <tbody id="translationsBody"></tbody>
                         </table>
                     </div>
+                    <p id="tableMessage" class="notice"></p>
                     <div class="pagination" style="margin-top: 12px;">
                         <button type="button" id="prevPage" class="secondary">Prev</button>
                         <span id="pageStatus">Page 1</span>
+                        <span id="tableCount">Showing 0 to 0 of 0 entries</span>
                         <button type="button" id="nextPage" class="secondary">Next</button>
                     </div>
                 </div>
             </section>
+        <div class="modal" id="exportModal" aria-hidden="true">
+            <div class="modal__overlay" data-modal-close></div>
+            <div class="modal__content" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+                <div class="modal__header">
+                    <h2 id="exportModalTitle">Export Preview</h2>
+                    <button type="button" class="icon-btn modal__close" data-modal-close aria-label="Close">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 6l12 12"></path>
+                            <path d="M18 6l-12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <pre id="exportOutput">{}</pre>
+                <div class="actions">
+                    <button type="button" id="downloadExport">Download JSON</button>
+                    <button type="button" class="secondary" data-modal-close>Close</button>
+                </div>
+            </div>
+        </div>
         </main>
         </div>
     </body>

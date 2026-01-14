@@ -21,18 +21,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const createMessage = document.getElementById('createMessage');
     const updateMessage = document.getElementById('updateMessage');
     const translationsBody = document.getElementById('translationsBody');
+    const tableMessage = document.getElementById('tableMessage');
     const pageStatus = document.getElementById('pageStatus');
+    const tableCount = document.getElementById('tableCount');
     const prevPage = document.getElementById('prevPage');
     const nextPage = document.getElementById('nextPage');
     const exportOutput = document.getElementById('exportOutput');
     const downloadExport = document.getElementById('downloadExport');
+    const exportForm = document.getElementById('exportForm');
+    const resetExport = document.getElementById('resetExport');
+    const exportModal = document.getElementById('exportModal');
 
     const authOnlyButtons = [
         document.getElementById('logoutBtn'),
         document.getElementById('createForm').querySelector('button[type="submit"]'),
         document.getElementById('updateForm').querySelector('button[type="submit"]'),
         document.getElementById('searchForm').querySelector('button[type="submit"]'),
-        document.getElementById('exportForm').querySelector('button[type="submit"]'),
+        exportForm.querySelector('button[type="submit"]'),
+        resetExport,
         downloadExport
     ];
 
@@ -61,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchJson(url, options = {}) {
         const headers = options.headers || {};
+        headers.Accept = headers.Accept || 'application/json';
         if (state.token) {
             headers.Authorization = `Bearer ${state.token}`;
         }
@@ -76,7 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
             data = text;
         }
         if (!response.ok) {
-            const message = data && data.message ? data.message : 'Request failed.';
+            const fallback = typeof data === 'string' && data
+                ? data.slice(0, 200)
+                : response.statusText;
+            const message = data && data.message ? data.message : `Request failed (${response.status}). ${fallback}`;
             throw new Error(message);
         }
         return data;
@@ -98,6 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!state.token) {
             translationsBody.innerHTML = '';
             pageStatus.textContent = 'Page 1';
+            tableCount.textContent = 'Showing 0 to 0 of 0 entries';
+            prevPage.disabled = true;
+            nextPage.disabled = true;
+            showMessage(tableMessage, '');
             return;
         }
 
@@ -108,11 +122,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(state.searchParams);
         params.set('page', state.page);
 
-        const data = await fetchJson(`${endpoint}?${params.toString()}`);
-        renderTable(data.data || []);
-        state.page = data.meta?.current_page || 1;
-        state.lastPage = data.meta?.last_page || 1;
-        pageStatus.textContent = `Page ${state.page} of ${state.lastPage}`;
+        try {
+            const data = await fetchJson(`${endpoint}?${params.toString()}`);
+            renderTable(data.data || []);
+            const pagination = data.meta || data;
+            state.page = pagination.current_page || 1;
+            state.lastPage = pagination.last_page || 1;
+            pageStatus.textContent = `Page ${state.page} of ${state.lastPage}`;
+            const total = pagination.total ?? 0;
+            const from = pagination.from ?? 0;
+            const to = pagination.to ?? 0;
+            tableCount.textContent = `Showing ${from} to ${to} of ${total} entries`;
+            prevPage.disabled = state.page <= 1;
+            nextPage.disabled = state.page >= state.lastPage;
+            showMessage(tableMessage, '');
+        } catch (error) {
+            renderTable([]);
+            showMessage(tableMessage, error.message, 'error');
+            pageStatus.textContent = 'Page 1';
+            tableCount.textContent = 'Showing 0 to 0 of 0 entries';
+            prevPage.disabled = true;
+            nextPage.disabled = true;
+        }
     }
 
     function renderTable(items) {
@@ -137,8 +168,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${item.locale?.code ?? '-'}</td>
                 <td>${tagHtml || '-'}</td>
                 <td>
-                    <button type="button" class="secondary" data-action="edit" data-id="${item.id}">Edit</button>
-                    <button type="button" class="warn" data-action="delete" data-id="${item.id}">Delete</button>
+                    <div class="action-buttons">
+                        <button type="button" class="icon-btn" data-action="edit" data-id="${item.id}" aria-label="Edit">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4z"></path>
+                                <path d="M13.5 6.5l4 4"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="icon-btn danger" data-action="delete" data-id="${item.id}" aria-label="Delete">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M6 7h12"></path>
+                                <path d="M9 7V5h6v2"></path>
+                                <path d="M8 7l1 12h6l1-12"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </td>
             `;
             translationsBody.appendChild(row);
@@ -301,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('exportForm').addEventListener('submit', async (event) => {
+    exportForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const locale = document.getElementById('exportLocale').value;
         const tag = document.getElementById('exportTag').value;
@@ -313,9 +357,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await fetchJson(`${API_BASE}/export/${locale}?${params.toString()}`);
             state.lastExport = data;
             exportOutput.textContent = JSON.stringify(data, null, 2);
+            exportModal.classList.add('is-open');
+            exportModal.setAttribute('aria-hidden', 'false');
         } catch (error) {
             exportOutput.textContent = JSON.stringify({ error: error.message }, null, 2);
+            exportModal.classList.add('is-open');
+            exportModal.setAttribute('aria-hidden', 'false');
         }
+    });
+
+    resetExport.addEventListener('click', () => {
+        resetExportState();
     });
 
     downloadExport.addEventListener('click', () => {
@@ -329,6 +381,24 @@ document.addEventListener('DOMContentLoaded', () => {
         link.download = 'translations.json';
         link.click();
         URL.revokeObjectURL(url);
+    });
+
+    function resetExportState() {
+        exportForm.reset();
+        state.lastExport = null;
+        exportOutput.textContent = '{}';
+    }
+
+    function closeExportModal() {
+        exportModal.classList.remove('is-open');
+        exportModal.setAttribute('aria-hidden', 'true');
+        resetExportState();
+    }
+
+    exportModal.addEventListener('click', (event) => {
+        if (event.target.closest('[data-modal-close]')) {
+            closeExportModal();
+        }
     });
 
     updateTokenUI();

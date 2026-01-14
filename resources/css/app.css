@@ -190,6 +190,11 @@ body {
     margin-top: 14px;
 }
 
+.tms-app .actions.vertical {
+    flex-direction: column;
+    align-items: stretch;
+}
+
 .tms-app button {
     border: none;
     border-radius: 999px;
@@ -254,6 +259,18 @@ body {
     font-size: 0.9rem;
 }
 
+.tms-app .table tbody tr {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tms-app .table tbody tr:nth-child(odd) {
+    background: rgba(148, 163, 184, 0.04);
+}
+
+.tms-app .table tbody tr:hover {
+    background: rgba(34, 211, 238, 0.12);
+}
+
 .tms-app .table th,
 .tms-app .table td {
     text-align: left;
@@ -262,9 +279,16 @@ body {
     vertical-align: top;
 }
 
+.tms-app .table td:last-child {
+    white-space: nowrap;
+}
+
 .tms-app .table th {
     color: var(--muted);
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.75rem;
 }
 
 .tms-app .tag {
@@ -285,6 +309,48 @@ body {
     gap: 12px;
     font-size: 0.85rem;
     color: var(--muted);
+    flex-wrap: wrap;
+}
+
+.tms-app .icon-btn {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.45);
+    color: var(--ink);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.tms-app .action-buttons {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.tms-app .icon-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tms-app .icon-btn:hover {
+    box-shadow: 0 8px 18px rgba(34, 211, 238, 0.25);
+}
+
+.tms-app .icon-btn.danger {
+    border-color: rgba(251, 113, 133, 0.4);
+    color: #fecdd3;
+}
+
+.tms-app .icon-btn.danger:hover {
+    box-shadow: 0 8px 18px rgba(251, 113, 133, 0.25);
 }
 
 .tms-app pre {
@@ -300,6 +366,59 @@ body {
     font-size: 0.85rem;
     color: var(--muted);
     margin-top: 10px;
+}
+
+.tms-app .modal {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 50;
+}
+
+.tms-app .modal.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tms-app .modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+}
+
+.tms-app .modal__content {
+    position: relative;
+    width: min(92vw, 720px);
+    max-height: 80vh;
+    display: grid;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.tms-app .modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tms-app .modal__close {
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.tms-app .modal__content pre {
+    margin: 0;
+    max-height: 52vh;
 }
 
 @media (max-width: 960px) {

@@ -10,20 +10,86 @@ use App\Models\Tag;
 use App\Models\Translation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use OpenApi\Annotations as OA;
 
 class TranslationController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/translations",
+     *     tags={"Translations"},
+     *     summary="List translations",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Paginated translations",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Translation")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
         return Translation::with(['locale', 'tags'])
             ->paginate(50);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/translations/{translation}",
+     *     tags={"Translations"},
+     *     summary="Get a translation",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="translation",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Translation",
+     *         @OA\JsonContent(ref="#/components/schemas/Translation")
+     *     )
+     * )
+     */
     public function show(Translation $translation)
     {
         return $translation->load(['locale', 'tags']);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/translations",
+     *     tags={"Translations"},
+     *     summary="Create a translation",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"key","content","locale"},
+     *             @OA\Property(property="key", type="string", example="auth.login.title"),
+     *             @OA\Property(property="content", type="string", example="Welcome back"),
+     *             @OA\Property(property="locale", type="string", example="en"),
+     *             @OA\Property(
+     *                 property="tags",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="web")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Created",
+     *         @OA\JsonContent(ref="#/components/schemas/Translation")
+     *     )
+     * )
+     */
     public function store(StoreTranslationRequest $request)
     {
         $data = $request->validated();
@@ -43,6 +109,36 @@ class TranslationController extends Controller
         return response()->json($translation->load(['locale', 'tags']), 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/translations/{translation}",
+     *     tags={"Translations"},
+     *     summary="Update a translation",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="translation",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="content", type="string", example="Updated content"),
+     *             @OA\Property(
+     *                 property="tags",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="mobile")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Updated",
+     *         @OA\JsonContent(ref="#/components/schemas/Translation")
+     *     )
+     * )
+     */
     public function update(UpdateTranslationRequest $request, Translation $translation)
     {
         $data = $request->validated();
@@ -56,6 +152,27 @@ class TranslationController extends Controller
         return $translation->load(['locale', 'tags']);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/translations/{translation}",
+     *     tags={"Translations"},
+     *     summary="Delete a translation",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="translation",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Deleted",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Deleted successfully")
+     *         )
+     *     )
+     * )
+     */
     public function destroy(Translation $translation)
     {
         $translation->delete();
@@ -64,6 +181,29 @@ class TranslationController extends Controller
         return response()->json(['message' => 'Deleted successfully']);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/translations/search",
+     *     tags={"Translations"},
+     *     summary="Search translations",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="key", in="query", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="content", in="query", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="locale", in="query", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="tag", in="query", @OA\Schema(type="string")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Paginated translations",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Translation")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function search(Request $request)
     {
         $query = Translation::query()

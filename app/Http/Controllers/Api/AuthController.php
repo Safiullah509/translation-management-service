@@ -6,9 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use OpenApi\Annotations as OA;
 
 class AuthController extends Controller
 {
+    /**
+     * @OA\Post(
+     *     path="/auth/token",
+     *     tags={"Auth"},
+     *     summary="Create an API token",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="admin@example.com"),
+     *             @OA\Property(property="password", type="string", example="password"),
+     *             @OA\Property(property="device_name", type="string", example="web-console")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token created",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="token", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Invalid credentials")
+     * )
+     */
     public function token(Request $request)
     {
         $credentials = $request->validate([
@@ -30,6 +55,21 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/auth/logout",
+     *     tags={"Auth"},
+     *     summary="Revoke current token",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logged out",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Logged out.")
+     *         )
+     *     )
+     * )
+     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()?->delete();
