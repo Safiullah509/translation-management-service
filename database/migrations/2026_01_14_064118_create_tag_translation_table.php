@@ -20,6 +20,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
+            $table->index('tag_id');
             $table->primary(['translation_id', 'tag_id']);
         });
     }

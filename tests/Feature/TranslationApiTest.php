@@ -7,6 +7,7 @@ use App\Models\Tag;
 use App\Models\Translation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -14,12 +15,25 @@ class TranslationApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::store('file')->flush();
+    }
+
     private function signIn(): User
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
         return $user;
+    }
+
+    public function test_routes_require_authentication(): void
+    {
+        $response = $this->getJson('/api/translations');
+
+        $response->assertStatus(401);
     }
 
     public function test_can_create_translation_with_tags(): void
@@ -48,6 +62,49 @@ class TranslationApiTest extends TestCase
         $this->assertDatabaseHas('tags', ['name' => 'mobile']);
     }
 
+    public function test_create_translation_requires_locale(): void
+    {
+        $this->signIn();
+
+        $response = $this->postJson('/api/translations', [
+            'key' => 'auth.login.title',
+            'content' => 'Welcome back',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['locale']);
+    }
+
+    public function test_key_must_be_unique_within_locale(): void
+    {
+        $this->signIn();
+        $en = Locale::create(['code' => 'en', 'name' => 'English']);
+        $fr = Locale::create(['code' => 'fr', 'name' => 'French']);
+
+        Translation::factory()->create([
+            'locale_id' => $en->id,
+            'key' => 'auth.login.title',
+        ]);
+
+        $responseSameLocale = $this->postJson('/api/translations', [
+            'key' => 'auth.login.title',
+            'content' => 'Duplicate',
+            'locale' => 'en',
+        ]);
+
+        $responseSameLocale->assertStatus(422)
+            ->assertJsonValidationErrors(['key']);
+
+        $responseDifferentLocale = $this->postJson('/api/translations', [
+            'key' => 'auth.login.title',
+            'content' => 'Different locale',
+            'locale' => 'fr',
+        ]);
+
+        $responseDifferentLocale->assertStatus(201)
+            ->assertJsonPath('locale.code', 'fr');
+    }
+
     public function test_can_list_translations_with_pagination(): void
     {
         $this->signIn();
@@ -67,6 +124,45 @@ class TranslationApiTest extends TestCase
             $this->assertArrayHasKey('current_page', $payload);
             $this->assertArrayHasKey('last_page', $payload);
         }
+    }
+
+    public function test_can_show_translation(): void
+    {
+        $this->signIn();
+        $locale = Locale::create(['code' => 'en', 'name' => 'English']);
+        $translation = Translation::factory()->create([
+            'locale_id' => $locale->id,
+            'key' => 'home.title',
+        ]);
+
+        $response = $this->getJson("/api/translations/{$translation->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('id', $translation->id)
+            ->assertJsonPath('key', 'home.title');
+    }
+
+    public function test_can_search_translations_by_filters(): void
+    {
+        $this->signIn();
+        $en = Locale::create(['code' => 'en', 'name' => 'English']);
+        $es = Locale::create(['code' => 'es', 'name' => 'Spanish']);
+
+        $match = Translation::factory()->create([
+            'locale_id' => $en->id,
+            'key' => 'home.title',
+            'content' => 'Welcome home',
+        ]);
+        Translation::factory()->create([
+            'locale_id' => $es->id,
+            'key' => 'home.subtitle',
+            'content' => 'Bienvenido',
+        ]);
+
+        $response = $this->getJson('/api/translations/search?key=home&content=Welcome&locale=en');
+
+        $response->assertOk()
+            ->assertJsonFragment(['id' => $match->id]);
     }
 
     public function test_can_search_translations_by_tag(): void
@@ -110,6 +206,41 @@ class TranslationApiTest extends TestCase
         $this->assertDatabaseHas('tags', ['name' => 'desktop']);
     }
 
+    public function test_can_update_tags_only(): void
+    {
+        $this->signIn();
+        $locale = Locale::create(['code' => 'en', 'name' => 'English']);
+        $tag = Tag::create(['name' => 'web']);
+        $translation = Translation::factory()->create(['locale_id' => $locale->id]);
+        $translation->tags()->sync([$tag->id]);
+
+        $response = $this->putJson("/api/translations/{$translation->id}", [
+            'tags' => ['mobile'],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('tags', ['name' => 'mobile']);
+    }
+
+    public function test_can_clear_tags(): void
+    {
+        $this->signIn();
+        $locale = Locale::create(['code' => 'en', 'name' => 'English']);
+        $tag = Tag::create(['name' => 'web']);
+        $translation = Translation::factory()->create(['locale_id' => $locale->id]);
+        $translation->tags()->sync([$tag->id]);
+
+        $response = $this->putJson("/api/translations/{$translation->id}", [
+            'tags' => [],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseMissing('tag_translation', [
+            'translation_id' => $translation->id,
+            'tag_id' => $tag->id,
+        ]);
+    }
+
     public function test_can_delete_translation(): void
     {
         $this->signIn();
@@ -143,5 +274,16 @@ class TranslationApiTest extends TestCase
         $this->assertArrayHasKey('home.title', $payload);
         $this->assertSame($translation->id, $payload['home.title']['id'] ?? null);
         $this->assertSame('Welcome', $payload['home.title']['content'] ?? null);
+    }
+
+    public function test_export_returns_empty_when_no_match(): void
+    {
+        $this->signIn();
+        Locale::create(['code' => 'en', 'name' => 'English']);
+
+        $response = $this->getJson('/api/export/en?tag=missing');
+
+        $response->assertOk();
+        $this->assertSame([], $response->json());
     }
 }

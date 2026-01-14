@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Translation;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use OpenApi\Annotations as OA;
 
 class TranslationExportController extends Controller
@@ -45,25 +44,16 @@ class TranslationExportController extends Controller
     {
         $tag = $request->query('tag');
 
-        $version = (int) Cache::get('translations.cache_version', 1);
-        $cacheKey = "translations.export.v{$version}.{$locale}." . ($tag ?? 'all');
-
-        $translations = Cache::store('file')->remember(
-            $cacheKey,
-            60,
-            function () use ($locale, $tag) {
-                return Translation::query()
-                    ->whereHas('locale', fn ($q) => $q->where('code', $locale))
-                    ->when($tag, fn ($q) =>
-                        $q->whereHas('tags', fn ($t) => $t->where('name', $tag))
-                    )
-                    ->get(['id', 'key', 'content'])
-                    ->mapWithKeys(fn ($row) => [
-                        $row->key => ['id' => $row->id, 'content' => $row->content],
-                    ])
-                    ->toArray();
-            }
-        );
+        $translations = Translation::query()
+            ->whereHas('locale', fn ($q) => $q->where('code', $locale))
+            ->when($tag, fn ($q) =>
+                $q->whereHas('tags', fn ($t) => $t->where('name', $tag))
+            )
+            ->get(['id', 'key', 'content'])
+            ->mapWithKeys(fn ($row) => [
+                $row->key => ['id' => $row->id, 'content' => $row->content],
+            ])
+            ->toArray();
 
         return response()->json($translations)
             ->header('Cache-Control', 'public, max-age=60');

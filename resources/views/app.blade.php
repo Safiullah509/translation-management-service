@@ -16,9 +16,12 @@
                 <h1>Translation Management Service</h1>
                 <p>Create, tag, and search translations. Export JSON for any locale in a single click.</p>
             </div>
-            <div class="status-pill">
-                <span id="tokenDot" class="dot"></span>
-                <span id="tokenStatus">No token saved</span>
+            <div class="header-actions">
+                <div class="status-pill">
+                    <span id="tokenDot" class="dot"></span>
+                    <span id="tokenStatus">No token saved</span>
+                </div>
+                <a href="/" class="back-link">Back to Home</a>
             </div>
         </header>
 

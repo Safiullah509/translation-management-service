@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AuthApiTest extends TestCase
@@ -40,5 +41,16 @@ class AuthApiTest extends TestCase
 
         $response->assertStatus(401)
             ->assertJsonFragment(['message' => 'Invalid credentials.']);
+    }
+
+    public function test_logout_revokes_token(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/auth/logout');
+
+        $response->assertOk()
+            ->assertJsonFragment(['message' => 'Logged out.']);
     }
 }
