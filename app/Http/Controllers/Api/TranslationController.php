@@ -36,6 +36,7 @@ class TranslationController extends Controller
     public function index()
     {
         return Translation::with(['locale', 'tags'])
+            ->orderByDesc('id')
             ->paginate(50);
     }
 
@@ -229,7 +230,9 @@ class TranslationController extends Controller
             });
         }
 
-        return $query->paginate(50);
+        return $query
+            ->orderByDesc('id')
+            ->paginate(50);
     }
 
     private function syncTags(Translation $translation, array $tagNames): void
