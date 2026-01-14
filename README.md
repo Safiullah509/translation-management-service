@@ -20,6 +20,9 @@ php artisan serve
 
 Visit `http://localhost:8000`.
 
+email `admin@example.com`.
+password `password123`
+
 ### Docker (minimal)
 
 From the repo root:
