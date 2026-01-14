@@ -40,10 +40,6 @@
                                 <input id="password" type="password" placeholder="password" required>
                             </div>
                         </div>
-                        <div style="margin-top: 12px;">
-                            <label for="deviceName">Device name</label>
-                            <input id="deviceName" type="text" placeholder="web-console">
-                        </div>
                         <div class="actions">
                             <button type="submit">Get Token</button>
                             <button type="button" id="logoutBtn" class="secondary">Logout</button>

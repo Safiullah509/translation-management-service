@@ -195,8 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const payload = {
                 email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                device_name: document.getElementById('deviceName').value || 'web-console'
+                password: document.getElementById('password').value
             };
             const data = await fetchJson(`${API_BASE}/auth/token`, {
                 method: 'POST',
