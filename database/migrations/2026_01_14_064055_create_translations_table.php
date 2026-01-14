@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('translations', function (Blueprint $table) {
             $table->id();
-        $table->string('key')->index(); // auth.login.title
-        $table->text('content');
-        $table->foreignId('locale_id')
-            ->constrained()
-            ->cascadeOnDelete();
-        $table->timestamps();
+            $table->string('key')->index(); // auth.login.title
+            $table->text('content');
+            $table->foreignId('locale_id')
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->timestamps();
 
-        $table->unique(['key', 'locale_id']);
+            $table->unique(['key', 'locale_id']);
         });
     }
 

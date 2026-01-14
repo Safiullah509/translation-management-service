@@ -11,7 +11,7 @@ class UpdateTranslationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -20,11 +20,11 @@ class UpdateTranslationRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
-{
-    return [
-        'content' => 'sometimes|required|string',
-        'tags' => 'sometimes|array',
-        'tags.*' => 'exists:tags,name',
-    ];
-}
+    {
+        return [
+            'content' => ['sometimes', 'required', 'string'],
+            'tags' => ['sometimes', 'array'],
+            'tags.*' => ['string', 'max:50', 'distinct'],
+        ];
+    }
 }

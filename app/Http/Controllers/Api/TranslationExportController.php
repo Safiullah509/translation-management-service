@@ -13,9 +13,10 @@ class TranslationExportController extends Controller
     {
         $tag = $request->query('tag');
 
-        $cacheKey = "translations.export.{$locale}." . ($tag ?? 'all');
+        $version = (int) Cache::get('translations.cache_version', 1);
+        $cacheKey = "translations.export.v{$version}.{$locale}." . ($tag ?? 'all');
 
-        $translations = Cache::tags(['translations'])->remember(
+        $translations = Cache::remember(
             $cacheKey,
             60,
             function () use ($locale, $tag) {

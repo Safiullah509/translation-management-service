@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Locale;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTranslationRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class StoreTranslationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -20,13 +22,22 @@ class StoreTranslationRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
-{
-    return [
-        'key' => 'required|string|max:255',
-        'content' => 'required|string',
-        'locale' => 'required|exists:locales,code',
-        'tags' => 'array',
-        'tags.*' => 'exists:tags,name',
-    ];
-}
+    {
+        $localeId = Locale::where('code', $this->input('locale'))->value('id');
+
+        $uniqueKeyRule = Rule::unique('translations', 'key');
+        if ($localeId) {
+            $uniqueKeyRule = $uniqueKeyRule->where(
+                fn ($query) => $query->where('locale_id', $localeId)
+            );
+        }
+
+        return [
+            'key' => ['required', 'string', 'max:255', $uniqueKeyRule],
+            'content' => ['required', 'string'],
+            'locale' => ['required', 'string', 'exists:locales,code'],
+            'tags' => ['sometimes', 'array'],
+            'tags.*' => ['string', 'max:50', 'distinct'],
+        ];
+    }
 }

@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('tag_translation', function (Blueprint $table) {
             $table->foreignId('translation_id')
-            ->constrained()
-            ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
-        $table->foreignId('tag_id')
-            ->constrained()
-            ->cascadeOnDelete();
+            $table->foreignId('tag_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-        $table->primary(['translation_id', 'tag_id']);
+            $table->primary(['translation_id', 'tag_id']);
         });
     }
 

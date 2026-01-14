@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('tags', function (Blueprint $table) {
             $table->id();
-        $table->string('name')->unique(); // web, mobile, desktop
-        $table->timestamps();
+            $table->string('name')->unique(); // web, mobile, desktop
+            $table->timestamps();
         });
     }
 
