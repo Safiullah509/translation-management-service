@@ -2,11 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Translation extends Model
 {
-    protected $fillable = ['key', 'content', 'locale_id'];
+    use HasFactory;
+
+    protected $fillable = [
+        'key',
+        'content',
+        'locale_id',
+    ];
 
     public function locale()
     {
